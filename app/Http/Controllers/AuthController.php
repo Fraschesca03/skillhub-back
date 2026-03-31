@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 /**
- * Contrôleur simple pour l'authentification.
+ * Contrôleur d'authentification.
  */
 class AuthController extends Controller
 {
     /**
-     * Inscription d'un utilisateur.
+     * Inscription utilisateur.
      */
     public function register(Request $request): JsonResponse
     {
@@ -25,13 +26,13 @@ class AuthController extends Controller
         ]);
 
         $user = User::create([
-            'nom' => $request->nom,
-            'email' => $request->email,
-            'password' => $request->password,
-            'role' => $request->role,
+            'nom' => $request->input('nom'),
+            'email' => $request->input('email'),
+            'password' => $request->input('password'),
+            'role' => $request->input('role'),
         ]);
 
-        $token = Auth::guard('api')->login($user);
+        $token = JWTAuth::fromUser($user);
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
@@ -41,7 +42,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Connexion d'un utilisateur.
+     * Connexion utilisateur.
      */
     public function login(Request $request): JsonResponse
     {
@@ -51,40 +52,66 @@ class AuthController extends Controller
         ]);
 
         $credentials = [
-            'email' => $request->email,
-            'password' => $request->password,
+            'email' => $request->input('email'),
+            'password' => $request->input('password'),
         ];
 
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
+        $token = JWTAuth::attempt($credentials);
+
+        if (! $token) {
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect'
             ], 401);
         }
 
+        $user = auth()->user();
+
         return response()->json([
             'message' => 'Connexion réussie',
             'token' => $token,
-            'user' => Auth::guard('api')->user(),
+            'user' => $user,
         ]);
     }
 
     /**
-     * Retourne le profil connecté.
+     * Profil utilisateur connecté.
      */
     public function profile(): JsonResponse
     {
-        return response()->json(Auth::guard('api')->user());
+        try {
+            $user = JWTAuth::parseToken()->authenticate();
+
+            if (! $user) {
+                return response()->json([
+                    'message' => 'Utilisateur non trouvé'
+                ], 404);
+            }
+
+            return response()->json([
+                'user' => $user
+            ]);
+        } catch (JWTException $e) {
+            return response()->json([
+                'message' => 'Token invalide ou absent'
+            ], 401);
+        }
     }
 
     /**
-     * Déconnexion.
+     * Déconnexion utilisateur.
      */
     public function logout(): JsonResponse
     {
-        Auth::guard('api')->logout();
+        try {
+            JWTAuth::parseToken()->invalidate();
 
-        return response()->json([
-            'message' => 'Déconnexion réussie'
-        ]);
+            return response()->json([
+                'message' => 'Déconnexion réussie'
+            ]);
+        } catch (JWTException $e) {
+            return response()->json([
+                'message' => 'Token invalide ou absent'
+            ], 401);
+        }
     }
 }
