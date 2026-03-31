@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FormationController;
+use App\Http\Controllers\ModuleController;
 use Illuminate\Support\Facades\Route;
 
 // Test API
@@ -23,3 +24,9 @@ Route::get('/formations/{id}', [FormationController::class, 'show']);
 Route::post('/formations', [FormationController::class, 'store']);
 Route::put('/formations/{id}', [FormationController::class, 'update']);
 Route::delete('/formations/{id}', [FormationController::class, 'destroy']);
+
+// Modules
+Route::get('/formations/{id}/modules', [ModuleController::class, 'index']);
+Route::post('/formations/{id}/modules', [ModuleController::class, 'store']);
+Route::put('/modules/{id}', [ModuleController::class, 'update']);
+Route::delete('/modules/{id}', [ModuleController::class, 'destroy']);

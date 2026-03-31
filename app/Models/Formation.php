@@ -29,4 +29,12 @@ class Formation extends Model
     {
         return $this->belongsTo(User::class, 'formateur_id');
     }
+
+    /**
+     * Relation : une formation a plusieurs modules.
+     */
+    public function modules()
+    {
+        return $this->hasMany(Module::class, 'formation_id')->orderBy('ordre');
+    }
 }
