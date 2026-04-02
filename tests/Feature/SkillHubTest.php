@@ -23,7 +23,6 @@ use Tymon\JWTAuth\Facades\JWTAuth;
  */
 class SkillHubTest extends TestCase
 {
-    // Recrée la BDD en mémoire avant chaque test
     use RefreshDatabase;
 
     // -------------------------------------------------------------------------
@@ -55,6 +54,7 @@ class SkillHubTest extends TestCase
         return Formation::create([
             'titre'          => 'Formation Test',
             'description'    => 'Description de test',
+            'categorie'      => 'developpement_web',
             'niveau'         => 'debutant',
             'nombre_de_vues' => 0,
             'formateur_id'   => $formateur->id,
@@ -184,6 +184,7 @@ class SkillHubTest extends TestCase
         $response = $this->postJson('/api/formations', [
             'titre'       => 'Laravel avancé',
             'description' => 'Apprendre Laravel en profondeur',
+            'categorie'   => 'developpement_web',
             'niveau'      => 'avance',
         ], $this->headers($token));
 
@@ -199,6 +200,7 @@ class SkillHubTest extends TestCase
         $response = $this->postJson('/api/formations', [
             'titre'       => 'Formation interdite',
             'description' => 'Test rôle',
+            'categorie'   => 'developpement_web',
             'niveau'      => 'debutant',
         ], $this->headers($token));
 
@@ -243,6 +245,7 @@ class SkillHubTest extends TestCase
         $response = $this->putJson('/api/formations/' . $formation->id, [
             'titre'       => 'Nouveau titre',
             'description' => 'Nouvelle description',
+            'categorie'   => 'developpement_web',
             'niveau'      => 'intermediaire',
         ], $this->headers($token));
 
@@ -256,7 +259,6 @@ class SkillHubTest extends TestCase
         ['user' => $formateur1] = $this->creerUtilisateur('formateur');
         $formation = $this->creerFormation($formateur1);
 
-        // Création d'un deuxième formateur
         $formateur2 = User::create([
             'nom'      => 'Formateur 2',
             'email'    => 'formateur2@test.com',
@@ -268,6 +270,7 @@ class SkillHubTest extends TestCase
         $response = $this->putJson('/api/formations/' . $formation->id, [
             'titre'       => 'Vol de formation',
             'description' => 'Tentative',
+            'categorie'   => 'developpement_web',
             'niveau'      => 'debutant',
         ], $this->headers($token2));
 
@@ -403,8 +406,8 @@ class SkillHubTest extends TestCase
     /** @test */
     public function un_apprenant_peut_sinscrire_a_une_formation(): void
     {
-        ['user' => $formateur]         = $this->creerUtilisateur('formateur');
-        ['token' => $tokenApprenant]   = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]       = $this->creerUtilisateur('formateur');
+        ['token' => $tokenApprenant] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
 
         $response = $this->postJson('/api/formations/' . $formation->id . '/inscription', [], $this->headers($tokenApprenant));
@@ -416,14 +419,11 @@ class SkillHubTest extends TestCase
     /** @test */
     public function linscription_en_double_retourne_409(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
 
-        // Première inscription
         $this->postJson('/api/formations/' . $formation->id . '/inscription', [], $this->headers($token));
-
-        // Deuxième inscription — doit retourner 409
         $response = $this->postJson('/api/formations/' . $formation->id . '/inscription', [], $this->headers($token));
 
         $response->assertStatus(409);
@@ -453,11 +453,10 @@ class SkillHubTest extends TestCase
     /** @test */
     public function un_apprenant_peut_se_desinscrire(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
 
-        // Inscription préalable
         Inscription::create([
             'utilisateur_id' => $apprenant->id,
             'formation_id'   => $formation->id,
@@ -473,8 +472,8 @@ class SkillHubTest extends TestCase
     /** @test */
     public function un_apprenant_voit_ses_formations_inscrites(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
 
         Inscription::create([
@@ -496,8 +495,8 @@ class SkillHubTest extends TestCase
     /** @test */
     public function un_apprenant_peut_terminer_un_module(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
         $module    = $this->creerModule($formation);
 
@@ -512,18 +511,17 @@ class SkillHubTest extends TestCase
         $response->assertStatus(200)
             ->assertJsonFragment([
                 'message'     => 'Module terminé avec succès',
-                'progression' => 100, // 1 module sur 1 = 100%
+                'progression' => 100,
             ]);
     }
 
     /** @test */
     public function la_progression_est_calculee_correctement_sur_plusieurs_modules(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
 
-        // 2 modules dans la formation
         $module1 = $this->creerModule($formation, 1);
         $this->creerModule($formation, 2);
 
@@ -533,20 +531,17 @@ class SkillHubTest extends TestCase
             'progression'    => 0,
         ]);
 
-        // Terminer seulement le module 1
         $response = $this->postJson('/api/modules/' . $module1->id . '/terminer', [], $this->headers($token));
 
         $response->assertStatus(200)
-            ->assertJsonFragment([
-                'progression' => 50, // 1 module sur 2 = 50%
-            ]);
+            ->assertJsonFragment(['progression' => 50]);
     }
 
     /** @test */
     public function terminer_un_module_deja_termine_retourne_un_message_sans_erreur(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
         $module    = $this->creerModule($formation);
 
@@ -556,10 +551,7 @@ class SkillHubTest extends TestCase
             'progression'    => 0,
         ]);
 
-        // Premier appel
         $this->postJson('/api/modules/' . $module->id . '/terminer', [], $this->headers($token));
-
-        // Deuxième appel — doit retourner 200 avec message doublon
         $response = $this->postJson('/api/modules/' . $module->id . '/terminer', [], $this->headers($token));
 
         $response->assertStatus(200)
@@ -569,12 +561,11 @@ class SkillHubTest extends TestCase
     /** @test */
     public function terminer_un_module_sans_etre_inscrit_retourne_403(): void
     {
-        ['user' => $formateur]         = $this->creerUtilisateur('formateur');
-        ['token' => $tokenApprenant]   = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]       = $this->creerUtilisateur('formateur');
+        ['token' => $tokenApprenant] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
         $module    = $this->creerModule($formation);
 
-        // Aucune inscription créée intentionnellement
         $response = $this->postJson('/api/modules/' . $module->id . '/terminer', [], $this->headers($tokenApprenant));
 
         $response->assertStatus(403);
@@ -595,8 +586,8 @@ class SkillHubTest extends TestCase
     /** @test */
     public function terminer_un_module_inexistant_retourne_404(): void
     {
-        ['user' => $formateur]                          = $this->creerUtilisateur('formateur');
-        ['user' => $apprenant, 'token' => $token]       = $this->creerUtilisateur('apprenant');
+        ['user' => $formateur]                    = $this->creerUtilisateur('formateur');
+        ['user' => $apprenant, 'token' => $token] = $this->creerUtilisateur('apprenant');
         $formation = $this->creerFormation($formateur);
 
         Inscription::create([
