@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FormationController;
+use App\Http\Controllers\InscriptionController;
 use App\Http\Controllers\ModuleController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,3 +31,11 @@ Route::get('/formations/{id}/modules', [ModuleController::class, 'index']);
 Route::post('/formations/{id}/modules', [ModuleController::class, 'store']);
 Route::put('/modules/{id}', [ModuleController::class, 'update']);
 Route::delete('/modules/{id}', [ModuleController::class, 'destroy']);
+
+// Inscriptions
+Route::post('/formations/{id}/inscription', [InscriptionController::class, 'store']);
+Route::delete('/formations/{id}/inscription', [InscriptionController::class, 'destroy']);
+Route::get('/apprenant/formations', [InscriptionController::class, 'mesFormations']);
+
+Route::post('/modules/{id}/terminer', [ModuleController::class, 'terminer']);
+Route::post('/modules/{id}/terminer', [ModuleController::class, 'terminer']);

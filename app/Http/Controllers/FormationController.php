@@ -14,41 +14,17 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 class FormationController extends Controller
 {
     /**
-     * Liste toutes les formations.
+     * Liste des formations.
      */
     public function index(): JsonResponse
     {
-        $formations = Formation::with('formateur:id,nom,email')
-            ->latest()
-            ->get();
+        $formations = Formation::with('formateur:id,nom,email')->get();
 
         return response()->json($formations);
     }
 
     /**
-     * Affiche le détail d'une formation.
-     * En même temps, on augmente le nombre de vues.
-     */
-    public function show($id): JsonResponse
-    {
-        $formation = Formation::with('formateur:id,nom,email')->find($id);
-
-        if (! $formation) {
-            return response()->json([
-                'message' => 'Formation introuvable'
-            ], 404);
-        }
-
-        // Incrément automatique des vues
-        $formation->increment('nombre_de_vues');
-        $formation->refresh();
-
-        return response()->json($formation);
-    }
-
-    /**
-     * Crée une formation.
-     * Seul un formateur connecté peut créer.
+     * Créer une nouvelle formation.
      */
     public function store(Request $request): JsonResponse
     {
@@ -70,15 +46,13 @@ class FormationController extends Controller
             $request->validate([
                 'titre' => 'required|string|max:255',
                 'description' => 'required|string',
-                'categorie' => 'required|string|max:255',
                 'niveau' => 'required|in:debutant,intermediaire,avance',
             ]);
 
             $formation = Formation::create([
-                'titre' => $request->input('titre'),
-                'description' => $request->input('description'),
-                'categorie' => $request->input('categorie'),
-                'niveau' => $request->input('niveau'),
+                'titre' => $request->titre,
+                'description' => $request->description,
+                'niveau' => $request->niveau,
                 'nombre_de_vues' => 0,
                 'formateur_id' => $user->id,
             ]);
@@ -96,8 +70,25 @@ class FormationController extends Controller
     }
 
     /**
-     * Modifie une formation.
-     * Le formateur ne peut modifier que sa propre formation.
+     * Afficher une formation.
+     */
+    public function show($id): JsonResponse
+    {
+        $formation = Formation::with('formateur:id,nom,email')->find($id);
+
+        if (! $formation) {
+            return response()->json([
+                'message' => 'Formation introuvable'
+            ], 404);
+        }
+
+        $formation->increment('nombre_de_vues');
+
+        return response()->json($formation->fresh('formateur:id,nom,email'));
+    }
+
+    /**
+     * Mettre à jour une formation.
      */
     public function update(Request $request, $id): JsonResponse
     {
@@ -118,34 +109,26 @@ class FormationController extends Controller
                 ], 404);
             }
 
-            if ($user->role !== 'formateur') {
+            if ($user->role !== 'formateur' || $formation->formateur_id !== $user->id) {
                 return response()->json([
-                    'message' => 'Seul un formateur peut modifier une formation'
-                ], 403);
-            }
-
-            if ($formation->formateur_id !== $user->id) {
-                return response()->json([
-                    'message' => 'Vous ne pouvez modifier que vos propres formations'
+                    'message' => 'Action non autorisée'
                 ], 403);
             }
 
             $request->validate([
                 'titre' => 'required|string|max:255',
                 'description' => 'required|string',
-                'categorie' => 'required|string|max:255',
                 'niveau' => 'required|in:debutant,intermediaire,avance',
             ]);
 
             $formation->update([
-                'titre' => $request->input('titre'),
-                'description' => $request->input('description'),
-                'categorie' => $request->input('categorie'),
-                'niveau' => $request->input('niveau'),
+                'titre' => $request->titre,
+                'description' => $request->description,
+                'niveau' => $request->niveau,
             ]);
 
             return response()->json([
-                'message' => 'Formation modifiée avec succès',
+                'message' => 'Formation mise à jour avec succès',
                 'formation' => $formation
             ]);
 
@@ -157,8 +140,7 @@ class FormationController extends Controller
     }
 
     /**
-     * Supprime une formation.
-     * Le formateur ne peut supprimer que sa propre formation.
+     * Supprimer une formation.
      */
     public function destroy($id): JsonResponse
     {
@@ -179,15 +161,9 @@ class FormationController extends Controller
                 ], 404);
             }
 
-            if ($user->role !== 'formateur') {
+            if ($user->role !== 'formateur' || $formation->formateur_id !== $user->id) {
                 return response()->json([
-                    'message' => 'Seul un formateur peut supprimer une formation'
-                ], 403);
-            }
-
-            if ($formation->formateur_id !== $user->id) {
-                return response()->json([
-                    'message' => 'Vous ne pouvez supprimer que vos propres formations'
+                    'message' => 'Action non autorisée'
                 ], 403);
             }
 

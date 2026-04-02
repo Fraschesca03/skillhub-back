@@ -14,9 +14,6 @@ class User extends Authenticatable implements JWTSubject
 {
     use Notifiable;
 
-    /**
-     * Champs autorisés en insertion.
-     */
     protected $fillable = [
         'nom',
         'email',
@@ -24,17 +21,11 @@ class User extends Authenticatable implements JWTSubject
         'role',
     ];
 
-    /**
-     * Champs cachés dans les réponses JSON.
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Cast automatique du mot de passe.
-     */
     protected function casts(): array
     {
         return [
@@ -42,19 +33,38 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-    /**
-     * ID utilisé dans le JWT.
-     */
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
 
-    /**
-     * Données supplémentaires du JWT.
-     */
     public function getJWTCustomClaims(): array
     {
         return [];
     }
+
+    /**
+     * Relation : un formateur peut avoir plusieurs formations.
+     */
+    public function formations()
+    {
+        return $this->hasMany(Formation::class, 'formateur_id');
+    }
+
+    /**
+     * Relation : un utilisateur peut avoir plusieurs inscriptions.
+     */
+    public function inscriptions()
+    {
+        return $this->hasMany(Inscription::class, 'utilisateur_id');
+    }
+    /**
+ * Relation : modules terminés par l'utilisateur.
+ */
+public function modulesTermines()
+{
+    return $this->belongsToMany(Module::class, 'module_user', 'utilisateur_id', 'module_id')
+        ->withPivot('termine')
+        ->withTimestamps();
+}
 }

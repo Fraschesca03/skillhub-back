@@ -11,18 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('formations', function (Blueprint $table) {
+        Schema::create('inscriptions', function (Blueprint $table) {
             $table->id();
-            $table->string('titre');
-            $table->text('description');
-            $table->string('niveau');
-            $table->integer('nombre_de_vues')->default(0);
-            $table->unsignedBigInteger('formateur_id');
+
+            $table->unsignedBigInteger('utilisateur_id');
+            $table->unsignedBigInteger('formation_id');
+            $table->integer('progression')->default(0);
+
             $table->timestamps();
 
-            $table->foreign('formateur_id')
+            $table->foreign('utilisateur_id')
                 ->references('id')
                 ->on('users')
+                ->onDelete('cascade');
+
+            $table->foreign('formation_id')
+                ->references('id')
+                ->on('formations')
                 ->onDelete('cascade');
         });
     }
@@ -32,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('formations');
+        Schema::dropIfExists('inscriptions');
     }
 };

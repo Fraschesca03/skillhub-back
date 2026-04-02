@@ -10,13 +10,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Formation extends Model
 {
-    /**
-     * Champs autorisés à l'insertion.
-     */
     protected $fillable = [
         'titre',
         'description',
-        'categorie',
         'niveau',
         'nombre_de_vues',
         'formateur_id',
@@ -36,5 +32,13 @@ class Formation extends Model
     public function modules()
     {
         return $this->hasMany(Module::class, 'formation_id')->orderBy('ordre');
+    }
+
+    /**
+     * Relation : une formation a plusieurs inscriptions.
+     */
+    public function inscriptions()
+    {
+        return $this->hasMany(Inscription::class, 'formation_id');
     }
 }
