@@ -13,6 +13,7 @@ class Formation extends Model
     protected $fillable = [
         'titre',
         'description',
+        'categorie',
         'niveau',
         'nombre_de_vues',
         'formateur_id',
@@ -40,5 +41,13 @@ class Formation extends Model
     public function inscriptions()
     {
         return $this->hasMany(Inscription::class, 'formation_id');
+    }
+
+    /**
+     * Relation : une formation a plusieurs vues uniques.
+     */
+    public function vues()
+    {
+        return $this->hasMany(FormationVue::class, 'formation_id');
     }
 }

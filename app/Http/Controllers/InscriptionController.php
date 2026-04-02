@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Formation;
 use App\Models\Inscription;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -15,6 +16,7 @@ class InscriptionController extends Controller
 {
     /**
      * Inscrire un apprenant à une formation.
+     * Route : POST /formations/{id}/inscription
      */
     public function store($formationId): JsonResponse
     {
@@ -22,23 +24,19 @@ class InscriptionController extends Controller
             $user = JWTAuth::parseToken()->authenticate();
 
             if (! $user) {
-                return response()->json([
-                    'message' => 'Utilisateur non trouvé'
-                ], 404);
+                return response()->json(['message' => 'Utilisateur non trouvé'], 404);
             }
 
             if ($user->role !== 'apprenant') {
                 return response()->json([
-                    'message' => 'Seul un apprenant peut s’inscrire à une formation'
+                    'message' => "Seul un apprenant peut s'inscrire à une formation"
                 ], 403);
             }
 
             $formation = Formation::find($formationId);
 
             if (! $formation) {
-                return response()->json([
-                    'message' => 'Formation introuvable'
-                ], 404);
+                return response()->json(['message' => 'Formation introuvable'], 404);
             }
 
             $dejaInscrit = Inscription::where('utilisateur_id', $user->id)
@@ -53,24 +51,26 @@ class InscriptionController extends Controller
 
             $inscription = Inscription::create([
                 'utilisateur_id' => $user->id,
-                'formation_id' => $formation->id,
-                'progression' => 0,
+                'formation_id'   => $formation->id,
+                'progression'    => 0,
             ]);
 
+            // Log MongoDB — inscription formation
+            ActivityLogService::inscriptionFormation($formation->id, $user->id);
+
             return response()->json([
-                'message' => 'Inscription réussie',
+                'message'     => 'Inscription réussie',
                 'inscription' => $inscription
             ], 201);
 
         } catch (JWTException $e) {
-            return response()->json([
-                'message' => 'Token invalide ou absent'
-            ], 401);
+            return response()->json(['message' => 'Token invalide ou absent'], 401);
         }
     }
 
     /**
      * Désinscrire un apprenant d'une formation.
+     * Route : DELETE /formations/{id}/inscription
      */
     public function destroy($formationId): JsonResponse
     {
@@ -78,9 +78,7 @@ class InscriptionController extends Controller
             $user = JWTAuth::parseToken()->authenticate();
 
             if (! $user) {
-                return response()->json([
-                    'message' => 'Utilisateur non trouvé'
-                ], 404);
+                return response()->json(['message' => 'Utilisateur non trouvé'], 404);
             }
 
             if ($user->role !== 'apprenant') {
@@ -94,26 +92,21 @@ class InscriptionController extends Controller
                 ->first();
 
             if (! $inscription) {
-                return response()->json([
-                    'message' => 'Inscription introuvable'
-                ], 404);
+                return response()->json(['message' => 'Inscription introuvable'], 404);
             }
 
             $inscription->delete();
 
-            return response()->json([
-                'message' => 'Désinscription réussie'
-            ]);
+            return response()->json(['message' => 'Désinscription réussie']);
 
         } catch (JWTException $e) {
-            return response()->json([
-                'message' => 'Token invalide ou absent'
-            ], 401);
+            return response()->json(['message' => 'Token invalide ou absent'], 401);
         }
     }
 
     /**
      * Liste des formations suivies par l'apprenant connecté.
+     * Route : GET /apprenant/formations
      */
     public function mesFormations(): JsonResponse
     {
@@ -121,9 +114,7 @@ class InscriptionController extends Controller
             $user = JWTAuth::parseToken()->authenticate();
 
             if (! $user) {
-                return response()->json([
-                    'message' => 'Utilisateur non trouvé'
-                ], 404);
+                return response()->json(['message' => 'Utilisateur non trouvé'], 404);
             }
 
             if ($user->role !== 'apprenant') {
@@ -139,9 +130,7 @@ class InscriptionController extends Controller
             return response()->json($inscriptions);
 
         } catch (JWTException $e) {
-            return response()->json([
-                'message' => 'Token invalide ou absent'
-            ], 401);
+            return response()->json(['message' => 'Token invalide ou absent'], 401);
         }
     }
 }

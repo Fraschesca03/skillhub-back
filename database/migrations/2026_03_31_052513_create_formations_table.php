@@ -4,32 +4,25 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Création de la table formations.
+ */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('formations', function (Blueprint $table) {
             $table->id();
             $table->string('titre');
             $table->text('description');
+            $table->string('categorie')->default('autre');
             $table->string('niveau');
-            $table->integer('nombre_de_vues')->default(0);
-            $table->unsignedBigInteger('formateur_id');
+            $table->unsignedInteger('nombre_de_vues')->default(0);
+            $table->foreignId('formateur_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
-
-            $table->foreign('formateur_id')
-                ->references('id')
-                ->on('users')
-                ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('formations');
