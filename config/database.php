@@ -89,21 +89,23 @@ return [
             'prefix_indexes' => true,
         ],
 
-        // Connexion MongoDB pour les logs d'activité
+        // Connexion MongoDB — messages entre utilisateurs
         'mongodb' => [
             'driver'   => 'mongodb',
             'host'     => env('MONGO_HOST', '127.0.0.1'),
             'port'     => env('MONGO_PORT', 27017),
-            'database' => env('MONGO_DATABASE', 'skillhub_logs'),
+            'database' => env('MONGO_DATABASE', 'skillhub_messages'),
             'username' => env('MONGO_USERNAME', ''),
             'password' => env('MONGO_PASSWORD', ''),
-            'options'  => [],
+            'options'  => [
+                'database' => env('MONGO_DATABASE', 'skillhub_messages'),
+            ],
         ],
 
     ],
 
     'migrations' => [
-        'table'                => 'migrations',
+        'table'                  => 'migrations',
         'update_date_on_publish' => true,
     ],
 

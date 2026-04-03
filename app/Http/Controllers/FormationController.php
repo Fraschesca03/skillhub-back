@@ -120,20 +120,24 @@ class FormationController extends Controller
             }
 
             $request->validate([
-                'titre'       => 'required|string|max:255',
-                'description' => 'required|string',
-                'categorie'   => 'required|in:developpement_web,data,design,marketing,devops,autre',
-                'niveau'      => 'required|in:debutant,intermediaire,avance',
-            ]);
+    'titre'        => 'required|string|max:255',
+    'description'  => 'required|string',
+    'categorie'    => 'required|in:developpement_web,data,design,marketing,devops,autre',
+    'niveau'       => 'required|in:debutant,intermediaire,avance',
+    'prix'         => 'nullable|numeric|min:0',
+    'duree_heures' => 'nullable|integer|min:0',
+]);
 
-            $formation = Formation::create([
-                'titre'          => $request->titre,
-                'description'    => $request->description,
-                'categorie'      => $request->categorie,
-                'niveau'         => $request->niveau,
-                'nombre_de_vues' => 0,
-                'formateur_id'   => $user->id,
-            ]);
+$formation = Formation::create([
+    'titre'          => $request->titre,
+    'description'    => $request->description,
+    'categorie'      => $request->categorie,
+    'niveau'         => $request->niveau,
+    'prix'           => $request->prix ?? 0,
+    'duree_heures'   => $request->duree_heures ?? 0,
+    'nombre_de_vues' => 0,
+    'formateur_id'   => $user->id,
+]);
 
             // Log MongoDB — création formation
             ActivityLogService::creationFormation($formation->id, $user->id);
@@ -172,11 +176,22 @@ class FormationController extends Controller
             }
 
             $request->validate([
-                'titre'       => 'required|string|max:255',
-                'description' => 'required|string',
-                'categorie'   => 'required|in:developpement_web,data,design,marketing,devops,autre',
-                'niveau'      => 'required|in:debutant,intermediaire,avance',
-            ]);
+    'titre'        => 'required|string|max:255',
+    'description'  => 'required|string',
+    'categorie'    => 'required|in:developpement_web,data,design,marketing,devops,autre',
+    'niveau'       => 'required|in:debutant,intermediaire,avance',
+    'prix'         => 'nullable|numeric|min:0',
+    'duree_heures' => 'nullable|integer|min:0',
+]);
+
+$formation->update([
+    'titre'        => $request->titre,
+    'description'  => $request->description,
+    'categorie'    => $request->categorie,
+    'niveau'       => $request->niveau,
+    'prix'         => $request->prix ?? $formation->prix,
+    'duree_heures' => $request->duree_heures ?? $formation->duree_heures,
+]);
 
             // Sauvegarde des anciennes valeurs pour le log
             $oldValues = [
@@ -186,12 +201,7 @@ class FormationController extends Controller
                 'niveau'      => $formation->niveau,
             ];
 
-            $formation->update([
-                'titre'       => $request->titre,
-                'description' => $request->description,
-                'categorie'   => $request->categorie,
-                'niveau'      => $request->niveau,
-            ]);
+           
 
             // Log MongoDB — modification formation avec avant/après
             ActivityLogService::modificationFormation(

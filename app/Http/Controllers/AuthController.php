@@ -114,4 +114,44 @@ class AuthController extends Controller
             ], 401);
         }
     }
+    /**
+ * Upload de la photo de profil.
+ * Route : POST /api/profil/photo
+ */
+public function uploadPhoto(Request $request): JsonResponse
+{
+    try {
+        $user = JWTAuth::parseToken()->authenticate();
+
+        if (! $user) {
+            return response()->json(['message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Suppression de l'ancienne photo si elle existe
+        if ($user->photo_profil && file_exists(public_path($user->photo_profil))) {
+            unlink(public_path($user->photo_profil));
+        }
+
+        // Sauvegarde de la nouvelle photo
+        $fichier   = $request->file('photo');
+        $nomFichier = 'profil_' . $user->id . '_' . time() . '.' . $fichier->getClientOriginalExtension();
+        $fichier->move(public_path('images/profils'), $nomFichier);
+
+        $user->photo_profil = '/images/profils/' . $nomFichier;
+        $user->save();
+
+        return response()->json([
+            'message'      => 'Photo mise à jour avec succès',
+            'photo_profil' => $user->photo_profil,
+            'user'         => $user,
+        ]);
+
+    } catch (JWTException $e) {
+        return response()->json(['message' => 'Token invalide ou absent'], 401);
+    }
+}
 }

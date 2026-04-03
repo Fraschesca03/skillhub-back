@@ -6,10 +6,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-/**
- * Modèle User.
- * Représente un utilisateur SkillHub.
- */
 class User extends Authenticatable implements JWTSubject
 {
     use Notifiable;
@@ -19,6 +15,7 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'role',
+        'photo_profil',
     ];
 
     protected $hidden = [
@@ -43,28 +40,35 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    /**
-     * Relation : un formateur peut avoir plusieurs formations.
-     */
     public function formations()
     {
         return $this->hasMany(Formation::class, 'formateur_id');
     }
 
-    /**
-     * Relation : un utilisateur peut avoir plusieurs inscriptions.
-     */
     public function inscriptions()
     {
         return $this->hasMany(Inscription::class, 'utilisateur_id');
     }
+
+    public function modulesTermines()
+    {
+        return $this->belongsToMany(Module::class, 'module_user', 'utilisateur_id', 'module_id')
+            ->withPivot('termine')
+            ->withTimestamps();
+    }
     /**
- * Relation : modules terminés par l'utilisateur.
- */
-public function modulesTermines()
-{
-    return $this->belongsToMany(Module::class, 'module_user', 'utilisateur_id', 'module_id')
-        ->withPivot('termine')
-        ->withTimestamps();
-}
+     * Relation : messages envoyés par l'utilisateur.
+     */
+    public function messagesEnvoyes()
+    {
+        return $this->hasMany(Message::class, 'expediteur_id');
+    }
+
+    /**
+     * Relation : messages reçus par l'utilisateur.
+     */
+    public function messagesRecus()
+    {
+        return $this->hasMany(Message::class, 'destinataire_id');
+    }
 }
