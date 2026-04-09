@@ -27,4 +27,14 @@ class Module extends Model
     {
         return $this->belongsTo(Formation::class, 'formation_id');
     }
+
+    /**
+     * Relation : utilisateurs ayant terminé ce module.
+     */
+    public function utilisateurs()
+    {
+        return $this->belongsToMany(User::class, 'module_user', 'module_id', 'utilisateur_id')
+            ->withPivot('termine')
+            ->withTimestamps();
+    }
 }

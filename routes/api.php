@@ -43,3 +43,8 @@ Route::get('/messages/conversations',                [MessageController::class, 
 Route::get('/messages/conversation/{interlocuteurId}',[MessageController::class, 'messagerie']);
 Route::post('/messages/envoyer',                     [MessageController::class, 'envoyer']);
 Route::get('/messages/interlocuteurs',               [MessageController::class, 'interlocuteurs']);
+
+// Gestion des requêtes preflight CORS
+Route::options('/{any}', function () {
+    return response('', 200);
+})->where('any', '.*');
